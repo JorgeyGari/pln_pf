@@ -1,3 +1,5 @@
+import os
+os.environ['OLLAMA_HOST'] = 'http://kumo01.tsc.uc3m.es:11434'
 import ollama
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
