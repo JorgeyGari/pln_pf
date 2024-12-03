@@ -34,7 +34,7 @@ def evaluate_truthfulness(statement):
     context = " ".join(retrieved_docs)
     
     response = ollama.chat(
-        model="llm_model",
+        model="llama3.2",
         messages=[
             {
                 'role': 'user',
