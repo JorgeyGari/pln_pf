@@ -3,3 +3,5 @@ ollama
 numpy
 scikit-learn 
 faiss-cpu
+chromadb
+sentence-transformers
