@@ -1,0 +1,5 @@
+wikipedia-api
+ollama
+numpy
+scikit-learn 
+faiss-cpu
