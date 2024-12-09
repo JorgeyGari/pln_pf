@@ -3,3 +3,7 @@ ollama
 numpy
 scikit-learn 
 faiss-cpu
+transformers
+wikipedia
+tensorflow
+tf-keras
