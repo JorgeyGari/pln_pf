@@ -7,3 +7,4 @@ transformers
 wikipedia
 tensorflow
 tf-keras
+requests
