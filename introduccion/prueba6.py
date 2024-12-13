@@ -1,3 +1,5 @@
+#python -m spacy download xx_sent_ud_sm
+
 import os
 os.environ['OLLAMA_HOST'] = 'http://kumo01.tsc.uc3m.es:11434'
 import ollama
@@ -46,8 +48,8 @@ mult_nlp.add_pipe('language_detector', last=True)
 def traducir_frase(frase,destino='es'):
     mult_doc = mult_nlp(frase)
     print(frase,"-->",mult_doc._.language['language'])
-    if mult_doc._.language['language'] != 'en':
-        translator= Translator(from_lang= mult_doc._.language['language'],to_lang="en")
+    if mult_doc._.language['language'] != destino:
+        translator= Translator(from_lang= mult_doc._.language['language'],to_lang=destino)
         translated = translator.translate(mult_doc.text)
         return translated
     else:
@@ -91,12 +93,12 @@ def evaluate_truthfulness(statement):
 statement = input("Por favor, ingresa una afirmación para verificar su veracidad: ")
 
 # Mirar si hay que traducir
-idioma = detectar_idioma(statement)
-print("El idioma de la entrada es: ",idioma)
-print(traducir_frase(statement,idioma,'es'))
+frase = traducir_frase(statement)
+
+print(frase)
 
 
-result = evaluate_truthfulness(statement)
+result = evaluate_truthfulness(frase)
 
 # Imprimir resultados
 print(f"Declaración: {result['statement']}")
