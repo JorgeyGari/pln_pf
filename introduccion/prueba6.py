@@ -5,6 +5,10 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import faiss
 import requests
+import spacy
+from spacy.language import Language
+from spacy_langdetect import LanguageDetector
+from translate import Translator
 
 # Paso 1: Recuperación de información
 
@@ -31,28 +35,23 @@ def retrieve_documents(query, k=5):
     return [paragraphs[i] for i in I[0]]
 
 #Paso 1.2 Traducir
-def detectar_idioma(frase):
-    try:
-        response = requests.post('https://libretranslate.com/detect', json={'q': frase})
-        response.raise_for_status()
-        deteccion = response.json()[0]
-        return deteccion['language']
-    except Exception as e:
-        return f"Error en la detección del idioma: {e}"
+@Language.factory("language_detector")
+def create_language_detector(nlp, name):
+    return LanguageDetector(language_detection_function=None)
 
-def traducir_frase(frase, src='auto', dest='es'):
-    try:
-        response = requests.post('https://libretranslate.com/translate', json={
-            'q': frase,
-            'source': src,
-            'target': dest
-        })
-        response.raise_for_status()
-        traduccion = response.json()
-        return traduccion['translatedText']
-    except Exception as e:
-        return f"Error en la traducción: {e}"
 
+mult_nlp = spacy.load('xx_sent_ud_sm')
+mult_nlp.add_pipe('language_detector', last=True)
+
+def traducir_frase(frase,destino='es'):
+    mult_doc = mult_nlp(frase)
+    print(frase,"-->",mult_doc._.language['language'])
+    if mult_doc._.language['language'] != 'en':
+        translator= Translator(from_lang= mult_doc._.language['language'],to_lang="en")
+        translated = translator.translate(mult_doc.text)
+        return translated
+    else:
+        return frase
 
 # Paso 2: Evaluación de veracidad
 
