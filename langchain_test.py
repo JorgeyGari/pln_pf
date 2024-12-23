@@ -61,7 +61,7 @@ question = "What are you?"
 response = chain.run(question=question)
 
 # Step 1: Question chain
-question = "What type of mammal lays the biggest eggs?"
+question = "The Roman Empire collapsed in the 5th Century."
 template_q = """{question}\n\n"""
 prompt_template_q = PromptTemplate(input_variables=["question"], template=template_q)
 question_chain = LLMChain(llm=llm, prompt=prompt_template_q)
@@ -93,5 +93,6 @@ overall_chain = SimpleSequentialChain(
 )
 
 # Execute the entire workflow
+print(f"Question: {question}\n")
 final_response = overall_chain.run(question)
 print(final_response)
