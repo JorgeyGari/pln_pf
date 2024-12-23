@@ -1,6 +1,6 @@
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain.chains import LLMChain, SimpleSequentialChain
 from typing import Optional
 from http import HTTPStatus
 
@@ -59,4 +59,39 @@ chain = LLMChain(llm=llm, prompt=prompt_template)
 
 question = "What are you?"
 response = chain.run(question=question)
-print(response)
+
+# Step 1: Question chain
+question = "What type of mammal lays the biggest eggs?"
+template_q = """{question}\n\n"""
+prompt_template_q = PromptTemplate(input_variables=["question"], template=template_q)
+question_chain = LLMChain(llm=llm, prompt=prompt_template_q)
+
+# Step 2: Assumptions chain
+template_assumptions = """Here is a statement:
+{statement}
+Make a bullet point list of the assumptions you made when producing the above statement.\n\n"""
+prompt_template_assumptions = PromptTemplate(input_variables=["statement"], template=template_assumptions)
+assumptions_chain = LLMChain(llm=llm, prompt=prompt_template_assumptions)
+
+# Step 3: Assumptions chain
+template_fact_checker = """Here is the bullet point list of assertions:
+{assertions}
+For each assertion, determine whether it is true or false. If it is false, explain why.\n\n"""
+prompt_template_fact_checker = PromptTemplate(input_variables=["assertions"], template=template_fact_checker)
+fact_checker_chain = LLMChain(llm=llm, prompt=prompt_template_fact_checker)
+
+# Step 4: Answer chain based on verified facts
+template_answer = """In light of the above facts, how would you answer the question '{}'""".format(question)
+template_answer = """{facts}\n""" + template_answer
+prompt_template_answer = PromptTemplate(input_variables=["facts"], template=template_answer)
+answer_chain = LLMChain(llm=llm, prompt=prompt_template_answer)
+
+# Step 5: Combine all the chains into a sequential workflow
+overall_chain = SimpleSequentialChain(
+    chains=[question_chain, assumptions_chain, fact_checker_chain, answer_chain],
+    verbose=True 
+)
+
+# Execute the entire workflow
+final_response = overall_chain.run(question)
+print(final_response)
