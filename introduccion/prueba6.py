@@ -1,5 +1,3 @@
-#python -m spacy download xx_sent_ud_sm
-
 import os
 os.environ['OLLAMA_HOST'] = 'http://kumo01.tsc.uc3m.es:11434'
 import ollama
@@ -41,19 +39,19 @@ def retrieve_documents(query, k=5):
 def create_language_detector(nlp, name):
     return LanguageDetector(language_detection_function=None)
 
-
+#python -m spacy download xx_sent_ud_sm
 mult_nlp = spacy.load('xx_sent_ud_sm')
 mult_nlp.add_pipe('language_detector', last=True)
 
 def traducir_frase(frase,destino='es'):
     mult_doc = mult_nlp(frase)
-    print(frase,"-->",mult_doc._.language['language'])
-    if mult_doc._.language['language'] != destino:
-        translator= Translator(from_lang= mult_doc._.language['language'],to_lang=destino)
+    idioma = mult_doc._.language['language']
+    if idioma != destino:
+        translator= Translator(from_lang= idioma,to_lang=destino)
         translated = translator.translate(mult_doc.text)
-        return translated
+        return translated,idioma
     else:
-        return frase
+        return frase,idioma
 
 # Paso 2: Evaluación de veracidad
 
@@ -93,15 +91,24 @@ def evaluate_truthfulness(statement):
 statement = input("Por favor, ingresa una afirmación para verificar su veracidad: ")
 
 # Mirar si hay que traducir
-frase = traducir_frase(statement)
-
+frase,idioma = traducir_frase(statement)
 print(frase)
 
-
+#Generar la respuesta
 result = evaluate_truthfulness(frase)
-
+statement_tranlated,_ = traducir_frase(result['statement'],idioma)
 # Imprimir resultados
-print(f"Declaración: {result['statement']}")
+print(f"Declaración: {statement_tranlated}")
+
+response_tranlated =''
+i=500
+while(len(result['response'])>i):
+    response,_ = traducir_frase(result['response'][i-500:i],idioma)
+    response_tranlated += response
+    response_tranlated += " "
+    i +=500
+response_tranlated += traducir_frase(result['response'][i-500:i],idioma)
+
 # print(f"Respuesta: {result['is_truthful']}")
-print(f"Justificación: {result['response']}")
+print(f"Justificación: {response_tranlated}")
 

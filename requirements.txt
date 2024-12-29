@@ -8,3 +8,6 @@ wikipedia
 tensorflow
 tf-keras
 requests
+spacy
+spacy_langdetect
+translate
