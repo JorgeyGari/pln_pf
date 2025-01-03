@@ -7,7 +7,8 @@ from http import HTTPStatus
 class CustomLLM(LLM):
     model: str
     system: str
-    api_url: str = "http://kumo01:11434/api/generate"
+    # api_url: str = "http://kumo01:11434/api/generate"
+    api_url: str = "http://kumo01.tsc.uc3m.es:11434/api/generate"
 
     def _call(self, prompt: str, stop: Optional[list] = None) -> str:
         """Make a call to the LLM's API and return the output."""
@@ -46,7 +47,7 @@ class CustomLLM(LLM):
         return {"model": self.model, "system": self.system}
 
 llm = CustomLLM(
-    model="llama3.2",
+    model="llama3.1:latest",
     system="You are a helpful AI Assistant",
 )
 
@@ -61,7 +62,8 @@ question = "What are you?"
 response = chain.run(question=question)
 
 # Step 1: Question chain
-question = "The Roman Empire collapsed in the 5th Century."
+# question = "The Roman Empire collapsed in the 5th Century."
+question = "El imperio romano "
 template_q = """{question}\n\n"""
 prompt_template_q = PromptTemplate(input_variables=["question"], template=template_q)
 question_chain = LLMChain(llm=llm, prompt=prompt_template_q)

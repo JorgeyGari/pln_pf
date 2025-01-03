@@ -1,7 +1,7 @@
 import requests
 import json
 
-def generate_response(model, system, prompt, url="http://kumo01:11434/api/generate"):
+def generate_response(model, system, prompt, url="http://kumo01.tsc.uc3m.es:11434/api/generate"):
     data = {
         "model": model,
         "system": system,
@@ -21,5 +21,7 @@ def generate_response(model, system, prompt, url="http://kumo01:11434/api/genera
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
-response = generate_response("llama3.2", "You are a helpful AI Assistant", "What are you?")
+# response = generate_response("llama3.2", "You are a helpful AI Assistant", "What are you?")
+
+response = generate_response("llama3.1:latest", "You are a helpful AI Assistant", "What are you?")
 print(response["response"])
