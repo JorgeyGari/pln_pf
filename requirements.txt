@@ -8,3 +8,4 @@ sentence-transformers
 fuzzywuzzy
 wikipedia
 langchain
+nltk
