@@ -1,4 +1,4 @@
-"""Basada en la prueba 1. Esta prueba se centra en el control de alucinaciones del modelo. TAmbién se ha mejorado la elección del contexto."""
+"""Basada en la prueba 3. Se cambia la manera de comprobar si una respuesta es verdadera o falsa"""
 import os
 os.environ['OLLAMA_HOST'] = 'http://localhost:11434'
 import wikipedia
@@ -31,7 +31,7 @@ def dividir_en_frases(texto):
 
 # Función mejorada para buscar artículos y extraer contenido con fuentes
 def buscar_en_wikipedia(statement):
-    frases = extraer_ngrams(statement, n=2)
+    frases = extraer_ngrams(statement, n=2)  # Puedes ajustar a tri-gramas con n=3
     busqueda = " ".join(frases)
 
     titulos = wikipedia.search(busqueda, results=10)  # Limitar a las 5 páginas más relevantes
@@ -51,7 +51,7 @@ def buscar_en_wikipedia(statement):
     return textos_recuperados, fuentes
 
 # Función para recuperar las frases más importantes junto con sus fuentes
-def retrieve_documents(statement, k=50):
+def retrieve_documents(statement, k=500):
     frases_recuperadas, fuentes = buscar_en_wikipedia(statement)
     if not frases_recuperadas:
         return ["No se encontró información relevante en Wikipedia."], []
@@ -95,7 +95,16 @@ def evaluate_truthfulness(statement):
 
     generated_response = response['message']['content']
 
-    
+    response_verdadero = ollama.chat(
+        model="llama3.2",
+        messages=[
+            {
+                'role': 'user',
+                'content': f"{generated_response}\n Esta frase justifica una afirmación, se está intentando asegurar que era verdadera, falsa? Responde únicamente con una palabra (verdadero o falso):"
+            },
+        ]
+    )
+    print(response_verdadero['message']['content'])
 
     respaldada = validar_respuesta(retrieved_docs, generated_response)
 
@@ -105,7 +114,7 @@ def evaluate_truthfulness(statement):
     if "no tengo suficiente información" in generated_response.lower() or "no puedo responder" in generated_response.lower():
         is_truthful = False
     else:
-        is_truthful = "verdadero" in generated_response.lower() or "true" in generated_response.lower()
+        is_truthful = "verdadero" in generated_response.lower() or "true" in generated_response.lower() or "verdadera" in generated_response.lower()
 
     return {
         "statement": statement,
@@ -122,6 +131,7 @@ result = evaluate_truthfulness(statement)
 
 # Imprimir resultados
 print(f"Declaración: {result['statement']}")
+print("Veracidad: Verdadera" if result['is_truthful'] else "Veracidad: Falsa")
 print(f"Justificación: {result['response']}")
 print(f"Fuentes utilizadas: {', '.join(set(result['sources']))}")
 print(f"¿Respaldada por el contexto?: {'Sí' if result['backed_by_context'] else 'No'}")

@@ -61,7 +61,7 @@ def evaluate_truthfulness(statement):
     retrieved_docs, fuentes = retrieve_documents(statement)
     # Formatear contexto con frases y fuentes
     contexto = "\n".join([f"- {frase} (Fuente: {fuente})" for frase, fuente in zip(retrieved_docs, fuentes)])
-
+    print(contexto)
     response = ollama.chat(
         model="llama3.2",
         messages=[
