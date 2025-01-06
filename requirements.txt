@@ -1,4 +1,4 @@
-wikipedia-api
+Wikipedia-API
 ollama
 numpy
 scikit-learn 

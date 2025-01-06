@@ -9,14 +9,40 @@ import re
 from itertools import islice
 from sklearn.feature_extraction.text import TfidfVectorizer
 import faiss
+# STOPWORDS
 import nltk
 from nltk.corpus import stopwords
 nltk.download('stopwords')
+#TRANSLATION
+import spacy
+from spacy.language import Language
+from spacy_langdetect import LanguageDetector
+from translate import Translator
 
-# Inicializar Wikipedia API
+
+# Paso 1.1 Inicializar Wikipedia API
 wiki_wiki = wikipediaapi.Wikipedia('MyProjectName (merlin@example.com)', 'en')
 
-# Función para extraer frases significativas (n-gramas)
+#Paso 1.2 Traducir
+@Language.factory("language_detector")
+def create_language_detector(nlp, name):
+    return LanguageDetector(language_detection_function=None)
+
+#python -m spacy download xx_sent_ud_sm
+mult_nlp = spacy.load('xx_sent_ud_sm')
+mult_nlp.add_pipe('language_detector', last=True)
+
+def traducir_frase(frase,destino='en'):
+    mult_doc = mult_nlp(frase)
+    idioma = mult_doc._.language['language']
+    if idioma != destino:
+        translator= Translator(from_lang= idioma,to_lang=destino)
+        translated = translator.translate(mult_doc.text)
+        return translated,idioma
+    else:
+        return frase,idioma
+
+# Paso 1.3. Función para extraer frases significativas (n-gramas)
 def extraer_ngrams(statement, n=2):
     palabras = re.findall(r'\b\w+\b', statement.lower())
     stop_words = set(stopwords.words('english'))
@@ -27,12 +53,12 @@ def extraer_ngrams(statement, n=2):
     frases = [" ".join(ngram) for ngram in ngrams]
     return frases
 
-# Función para dividir el texto en frases
+# Paso 1.4. Función para dividir el texto en frases
 def dividir_en_frases(texto):
     frases = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)\s(?=\w)', texto)
     return [frase.strip() for frase in frases if frase.strip()]
 
-# Función mejorada para buscar artículos y extraer contenido con fuentes
+# Paso 1.5. Función mejorada para buscar artículos y extraer contenido con fuentes
 def buscar_en_wikipedia(statement):
     frases = extraer_ngrams(statement, n=2)  # Puedes ajustar a tri-gramas con n=3
     busqueda = " ".join(frases)
@@ -53,7 +79,7 @@ def buscar_en_wikipedia(statement):
             fuentes.extend([titulo] * len(frases))  # Asociar cada frase a su fuente
     return textos_recuperados, fuentes
 
-# Función para recuperar las frases más importantes junto con sus fuentes
+# Paso 1.6. Función para recuperar las frases más importantes junto con sus fuentes
 def retrieve_documents(statement, k=50):
     frases_recuperadas, fuentes = buscar_en_wikipedia(statement)
     if not frases_recuperadas:
@@ -72,6 +98,7 @@ def retrieve_documents(statement, k=50):
     fuentes_relevantes = [fuentes[i] for i in I[0]]
     return frases_relevantes, fuentes_relevantes
 
+# Paso 2 Clase central
 class CustomLLM(LLM):
     model: str
     system: str
@@ -110,12 +137,20 @@ class CustomLLM(LLM):
         return {"model": self.model, "system": self.system}
 
 llm = CustomLLM(
-    model="llama3.1:latest",
+    model="llama3.2:latest",
     system="You are a helpful AI Assistant",
 )
 
 # Step 1: Question chain
-question = "The Roman Empire collapsed in the 5th Century."
+# statement = "The Roman Empire collapsed in the 5th Century."
+statement = "El Imperio Romano collapso en el Siglo 5."
+# Mirar si hay que traducir
+question,idioma = traducir_frase(statement)
+print(f"Se ha traducido la frase {statement}\n({idioma}-en)-> {question}")
+
+
+
+
 template_q = """{question}\n\n"""
 prompt_template_q = PromptTemplate(input_variables=["question"], template=template_q)
 question_chain = LLMChain(llm=llm, prompt=prompt_template_q)
