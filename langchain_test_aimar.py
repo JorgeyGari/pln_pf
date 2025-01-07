@@ -32,6 +32,23 @@ def create_language_detector(nlp, name):
 mult_nlp = spacy.load('xx_sent_ud_sm')
 mult_nlp.add_pipe('language_detector', last=True)
 
+# Diccionario de abreviaturas de idiomas a nombres completos en inglés
+language_map = {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "zh": "Chinese",
+    "ja": "Japanese",
+    "ko": "Korean",
+}
+
+def get_language_name(abbreviation):
+    return language_map.get(abbreviation, "English")
+
 def traducir_frase(frase,destino='en'):
     mult_doc = mult_nlp(frase)
     idioma = mult_doc._.language['language']
@@ -60,23 +77,31 @@ def dividir_en_frases(texto):
 
 # Paso 1.5. Función mejorada para buscar artículos y extraer contenido con fuentes
 def buscar_en_wikipedia(statement):
-    frases = extraer_ngrams(statement, n=2)  # Puedes ajustar a tri-gramas con n=3
+    frases = extraer_ngrams(statement, n=2)
     busqueda = " ".join(frases)
 
-    titulos = wikipedia.search(busqueda, results=15)  # Limitar a las 15 páginas más relevantes
+    titulos = wikipedia.search(busqueda, results=10)
+
     if not titulos:
         return None, []
 
-    textos_recuperados = []
-    fuentes = []
+    paginas_contenido = []
 
     for titulo in titulos:
         page = wiki_wiki.page(titulo)
         if page.exists():
-            texto = page.text[:2000]  # Limitar cada página a los primeros 2000 caracteres
-            frases = dividir_en_frases(texto)
-            textos_recuperados.extend(frases)
-            fuentes.extend([titulo] * len(frases))  # Asociar cada frase a su fuente
+            texto = page.text
+            paginas_contenido.append((titulo, texto))
+
+    # Ordenar páginas por la cantidad de contenido
+    paginas_contenido.sort(key=lambda x: len(x[1]), reverse=True)
+
+    # Seleccionar las 3 páginas con más contenido
+    paginas_seleccionadas = paginas_contenido[:5]
+
+    textos_recuperados = [pagina[1] for pagina in paginas_seleccionadas]
+    fuentes = [pagina[0] for pagina in paginas_seleccionadas]
+
     return textos_recuperados, fuentes
 
 # Paso 1.6. Función para recuperar las frases más importantes junto con sus fuentes
@@ -142,11 +167,12 @@ llm = CustomLLM(
 )
 
 # Step 1: Question chain
-# statement = "The Roman Empire collapsed in the 5th Century."
-statement = "El Imperio Romano collapso en el Siglo 5."
+# statement = "Is Mercury the closest planet to the sun."
+statement = "Ist Merkur der Sonne am nächsten gelegene Planet?"
 # Mirar si hay que traducir
 question,idioma = traducir_frase(statement)
 print(f"Se ha traducido la frase {statement}\n({idioma}-en)-> {question}")
+idioma = get_language_name(idioma)
 
 
 
@@ -172,7 +198,7 @@ fact_checker_chain = LLMChain(llm=llm, prompt=prompt_template_fact_checker)
 
 # Step 4: Answer chain based on verified facts
 template_answer = """In light of the above facts, how would you answer the question '{}'""".format(question)
-template_answer = """{facts}\n""" + template_answer
+template_answer = """{facts}\n""" + template_answer + f"\nPlease respond in {idioma}."
 prompt_template_answer = PromptTemplate(input_variables=["facts"], template=template_answer)
 answer_chain = LLMChain(llm=llm, prompt=prompt_template_answer)
 
@@ -184,7 +210,7 @@ single_input_chain = SimpleSequentialChain(
 )
 
 # Execute the entire workflow with document retrieval
-documents, sources = retrieve_documents(question)
+documents, sources = buscar_en_wikipedia(question)
 print(f"Question: {question}\n")
 
 # Run the single input chain first
