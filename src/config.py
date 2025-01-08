@@ -52,10 +52,7 @@ llm = CustomLLM(
     model="llama3.2:latest",
     system="You are a helpful AI Assistant",
 )
-llm_structured = CustomLLM(
-    model="llama3.2:latest",
-    system="You are a helpful AI Assistant",
-)
+
 section_format = {
     "type": "object",
     "properties": {
