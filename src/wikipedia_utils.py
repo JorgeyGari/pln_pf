@@ -48,17 +48,36 @@ def extract_text_from_sections(pages_sections_dict):
     """
     Given the relevant sections and a list of pages/sections,
     extract the corresponding text from those sections using the Wikipedia API.
+    Includes the text in the Wikipedia article before the first section (introduction).
+
+    Args:
+        pages_sections_dict (list): A list of dictionaries with 'page_title' and 'section' keys.
+
+    Returns:
+        dict: A dictionary where keys are "Section (Page Title)" or "Introduction (Page Title)"
+              and values are the extracted text.
     """
     relevant_texts = {}
 
     for page in pages_sections_dict:
         wiki_page = wiki.page(page["page_title"])
         if wiki_page.exists():
+            # Extract text from the specified section
             text = wiki_page.section_by_title(page["section"])
             if text:
-                relevant_texts[page["section"] + " (" + page["page_title"] + ")"] = text
+                key = f"{page['section']} ({page['page_title']})"
+                relevant_texts[key] = text
+
+            # Include the introduction if not already added
+            intro_key = f"Introduction ({page['page_title']})"
+            if intro_key not in relevant_texts:
+                intro_text = wiki_page.text.split("\n", 1)[
+                    0
+                ]  # Extract introduction (text before the first section)
+                if intro_text.strip():
+                    relevant_texts[intro_key] = intro_text
+                    print(f"Added introduction for {page['page_title']}: {intro_text}")
         else:
-            pages_sections_dict.remove(
-                page
-            )  # Remove the page if it doesn't exist, preventing made-up sections from being displayed in the documentation
+            pages_sections_dict.remove(page)  # Remove the page if it doesn't exist
+
     return relevant_texts
