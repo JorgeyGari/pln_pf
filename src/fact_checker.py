@@ -147,8 +147,8 @@ def main():
     # Run the entire workflow
     inputs = {"question": question, "context": context}
     final_answer = single_input_chain.invoke(inputs)["final_answer"]
-    print("FINAL RESPONSE:\n", final_answer)
-    print("\nDOCUMENTATION:\n Wikipedia articles used:")
+    print("\nANSWER\n", final_answer)
+    print("\nDOCUMENTATION\n Wikipedia articles used:")
     if not relevant_sections_dict.get("pages"):
         print("\tNo relevant pages found.")
     else:
@@ -156,12 +156,20 @@ def main():
             print(f"\t* {page['page_title']} § {page['section']}")
 
     # Step 5: Summarize sections
-    if input("Would you like to generate a summary of the information used? (y/n): ").lower() == "y":
+    if (
+        input(
+            "\nWould you like to generate a summary of the information used? (y/N):\n> "
+        ).lower()
+        == "y"
+    ):
+        print("\nINFORMATION SUMMARY")
         summaries = llm._call(
-            prompt=templates.summarize.format(context=context, question=question, language=lang),
+            prompt=templates.summarize.format(
+                context=context, question=question, language=lang
+            ),
         )
-        print(summaries)
-    
+        print(f" {summaries}")
+
 
 if __name__ == "__main__":
     main()
