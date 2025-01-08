@@ -157,7 +157,24 @@ def main():
         for page in relevant_sections_dict["pages"]:
             print(f"\t* {page['page_title']} § {page['section']}")
 
-    # Step 5: Summarize sections
+    # Step 5 (Extra): Evaluate confidence of the answer
+    if (
+        input(
+            "\nWould you like to evaluate the confidence of the answer? (y/N):\n> "
+        ).lower()
+        == "y"
+    ):
+        confidence_json = llm._call(
+            prompt=templates.confidence.format(
+                question, final_answer, relevant_sections_dict["pages"]
+            ),
+            format=confidence_format,
+        )
+        confidence = json.loads(confidence_json).get("confidence", 0)
+        confidence_reasoning = json.loads(confidence_json).get("reasoning", "")
+        print(f"\nCONFIDENCE\n {confidence}%\n{confidence_reasoning}")
+
+    # Step 6 (Extra): Summarize information used
     if (
         input(
             "\nWould you like to generate a summary of the information used? (y/N):\n> "

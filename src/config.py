@@ -80,3 +80,18 @@ section_format = {
         }
     },
 }
+
+confidence_format = {
+    "type": "object",
+    "properties": {
+        "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+        },
+        "reasoning": {
+            "type": "string",
+        },
+    },
+    "required": ["confidence"],
+}
