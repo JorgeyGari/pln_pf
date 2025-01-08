@@ -16,7 +16,7 @@ El sistema de verificación de hechos permite la extracción de información de 
 ## Requisitos
 
 - Python 3.11 o superior
-- Bibliotecas necesarias (ver `requirements.txt`)
+- Bibliotecas necesarias (ver [`requirements.txt`](requirements.txt))
 
 ## Instalación
 
@@ -24,11 +24,7 @@ El sistema de verificación de hechos permite la extracción de información de 
     ```bash
     git clone https://github.com/JorgeyGari/pln_pf.git
     ```
-2. Navega al directorio del proyecto:
-    ```bash
-    cd pln_pf/src
-    ```
-3. Instala las dependencias:
+2. Instala las dependencias:
     ```bash
     pip install -r requirements.txt
     ```
@@ -37,9 +33,9 @@ El sistema de verificación de hechos permite la extracción de información de 
 
 1. Ejecuta el script principal:
     ```bash
-    python fact_checker.py
+    python src/fact_checker.py
     ```
-2. Introduce una pregunta o afirmación para verificar su veracidad.
+2. Introduce una pregunta o afirmación en la consola para verificar su veracidad.
 
 ## Desarrolladores
 
