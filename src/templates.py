@@ -16,3 +16,9 @@ get_relevant_sections = """
 questions = """Based on the following information:\n{context}. \n\nAnswer the following question or say if it's true or false: {question}. Answer in a concise manner, use a maximum of three sentences.\n\n"""
 
 answer = "In light of the above reasoning, how would you answer the question '{}'?\nPlease respond in {}."
+
+
+summarize = """For each of the following sections: \n {context}, create a summary of each section, 
+establishing at the beggining the name of the section and then a brief summary of the content.
+
+Focus mainly on the most relevant information related to the question {question}. Do not mention subsections that are not related to the question. Please respond in {language}."""

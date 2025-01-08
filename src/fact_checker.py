@@ -155,6 +155,13 @@ def main():
         for page in relevant_sections_dict["pages"]:
             print(f"\t* {page['page_title']} § {page['section']}")
 
+    # Step 5: Summarize sections
+    if input("Would you like to generate a summary of the information used? (y/n): ").lower() == "y":
+        summaries = llm._call(
+            prompt=templates.summarize.format(context=context, question=question, language=lang),
+        )
+        print(summaries)
+    
 
 if __name__ == "__main__":
     main()
