@@ -17,7 +17,7 @@ questions = """Based on the following information:\n{context}. \n\nAnswer the fo
 
 answer = "In light of the above reasoning, how would you answer the question '{}'?\nPlease respond in {}."
 
-summarize = """For each of the following sections: \n {context}, create a summary of each section, 
+summarize = """For each of the following sections: \n {context}, create a summary of the introduction of the page and each section, 
 establishing at the beggining the name of the section and then a brief summary of the content.
 
 Focus mainly on the most relevant information related to the question {question}. Do not mention subsections that are not related to the question. Please respond in {language}."""

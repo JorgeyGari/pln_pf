@@ -45,6 +45,8 @@ def translate_input(input_sentence, target_language="en") -> tuple:
     if original_language != target_language:
         translator = Translator(from_lang=original_language, to_lang=target_language)
         translated = translator.translate(mult_doc.text)
+        if VERBOSE:
+            print(f"Translated ({original_language}>{target_language}):\n {translated}")
         return translated, original_language
     else:
         return input_sentence, original_language
