@@ -151,10 +151,12 @@ def main():
     final_answer = single_input_chain.invoke(inputs)["final_answer"]
     print("\nANSWER\n", final_answer)
     print("\nDOCUMENTATION\n Wikipedia articles used:")
+    relevant_sections = []
     if not relevant_sections_dict.get("pages"):
         print("\tNo relevant pages found.")
     else:
-        for page in relevant_sections_dict["pages"]:
+        relevant_sections = relevant_sections_dict["pages"]
+        for page in relevant_sections:
             print(f"\t* {page['page_title']} § {page['section']}")
 
     # Step 5 (Extra): Evaluate confidence of the answer
@@ -166,7 +168,7 @@ def main():
     ):
         confidence_json = llm._call(
             prompt=templates.confidence.format(
-                question, final_answer, relevant_sections_dict["pages"], lang
+                question, final_answer, relevant_sections, lang
             ),
             format=confidence_format,
         )
