@@ -1,6 +1,7 @@
 import wikipediaapi
 
 from entity_finder import list_entities
+from config import VERBOSE
 
 
 wiki = wikipediaapi.Wikipedia("FactChecker (email@example.com)", "en")
@@ -59,24 +60,36 @@ def extract_text_from_sections(pages_sections_dict):
     """
     relevant_texts = {}
 
-    for page in pages_sections_dict:
-        wiki_page = wiki.page(page["page_title"])
-        if wiki_page.exists():
+    for page in pages_sections_dict[:]:
+        try:
+            wiki_page = wiki.page(page["page_title"])
+
+            if not wiki_page.exists():
+                if VERBOSE:
+                    print(f"Page '{page['page_title']}' does not exist.")
+                pages_sections_dict.remove(page)  # Remove made-up pages from sources
+                continue
+
             # Extract text from the specified section
-            text = wiki_page.section_by_title(page["section"])
-            if text:
+            section_text = wiki_page.section_by_title(page["section"])
+            if section_text:
                 key = f"{page['section']} ({page['page_title']})"
-                relevant_texts[key] = text
+                relevant_texts[key] = section_text
+            elif VERBOSE:
+                print(
+                    f"Section '{page['section']}' not found in page '{page['page_title']}'."
+                )
 
             # Include the introduction if not already added
             intro_key = f"Introduction ({page['page_title']})"
             if intro_key not in relevant_texts:
-                intro_text = wiki_page.text.split("\n", 1)[
-                    0
-                ]  # Extract introduction (text before the first section)
+                intro_text = wiki_page.text.split("\n", 1)[0]  # Extract introduction
                 if intro_text.strip():
                     relevant_texts[intro_key] = intro_text
-        else:
-            pages_sections_dict.remove(page)  # Remove the page if it doesn't exist
+
+        except Exception as e:
+            if VERBOSE:
+                print(f"Error processing page '{page['page_title']}': {e}")
+            pages_sections_dict.remove(page)  # Remove problematic pages
 
     return relevant_texts
