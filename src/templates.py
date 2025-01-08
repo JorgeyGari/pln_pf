@@ -13,15 +13,6 @@ get_relevant_sections = """
     Determine the pages most relevant to answer the question. Specify the sections that are most relevant to answer the question. Keep the number of sections to a minimum. You may repeat pages if necessary to retrieve multiple sections from the same page.
     """
 
-assumptions = """Here is a statement:
-    {statement}
-    Make a bullet point list of the assumptions you made when producing the above statement based on the following documents:
-    {context}\n\n"""
+questions = """Based on the following information:\n{context}. \n\nAnswer the following question or say if it's true or false: {question}. Answer in a concise manner, use a maximum of three sentences.\n\n"""
 
-fact_checker = """Here is the bullet point list of assertions: \n
-    {assertions}\n\n
-    For each assertion, determine whether it is true or false. If it is false, explain why.\n\n"""
-
-questions = """Given the following question: {question}\n Answer it based on the following information:\n{context}"""
-
-answer = "In light of the above facts, how would you answer the question '{}'?\nPlease respond in {}."
+answer = "In light of the above reasoning, how would you answer the question '{}'?\nPlease respond in {}."

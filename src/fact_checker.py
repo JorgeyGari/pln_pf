@@ -126,33 +126,19 @@ def main():
     question_chain = setup_chain(
         template=templates.questions,
         input_variables=["question", "context"],
-        output_key="statement",
+        output_key="reasoning",
     )
 
-    # Step 4: Evaluate assumptions comparing with RAG
-    assumptions_chain = setup_chain(
-        template=templates.assumptions,
-        input_variables=["statement", "context"],
-        output_key="assertions",
-    )
-
-    # Step 5: Evaluate facts
-    fact_checker_chain = setup_chain(
-        template=templates.fact_checker,
-        input_variables=["assertions"],
-        output_key="facts",
-    )
-
-    # Step 6: Answer the question
+    # Step 4: Answer the question
     answer_chain = setup_chain(
-        template="{facts}\n\n" + templates.answer.format(question, lang),
-        input_variables=["facts", "question"],
+        template="{reasoning}\n\n" + templates.answer.format(question, lang),
+        input_variables=["reasoning", "question"],
         output_key="final_answer",
     )
 
     # Combine all chains
     single_input_chain = SequentialChain(
-        chains=[question_chain, assumptions_chain, fact_checker_chain, answer_chain],
+        chains=[question_chain, answer_chain],
         input_variables=["question", "context"],
         output_variables=["final_answer"],
         verbose=VERBOSE,
@@ -160,11 +146,8 @@ def main():
 
     # Run the entire workflow
     inputs = {"question": question, "context": context}
-    intermediate_response = single_input_chain.invoke(inputs)
-
-    # Final response
-    final_response = answer_chain.run(question)
-    print("FINAL RESPONSE:\n", final_response)
+    final_answer = single_input_chain.invoke(inputs)["final_answer"]
+    print("FINAL RESPONSE:\n", final_answer)
     print("\nDOCUMENTATION:\n Wikipedia articles used:")
     if not relevant_sections_dict.get("pages"):
         print("\tNo relevant pages found.")
