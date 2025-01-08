@@ -93,5 +93,5 @@ confidence_format = {
             "type": "string",
         },
     },
-    "required": ["confidence"],
+    "required": ["confidence", "reasoning"],
 }
