@@ -1,162 +1,41 @@
-from langchain.llms.base import LLM
+import json
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain, TransformChain, SequentialChain
-from typing import Optional
-from http import HTTPStatus
 import wikipediaapi
-import wikipedia
 import re
-from itertools import islice
 from sklearn.feature_extraction.text import TfidfVectorizer
 import faiss
-# STOPWORDS
+
+# Stopwords
 import nltk
-from nltk.corpus import stopwords
-nltk.download('stopwords')
-#TRANSLATION
+nltk.download('stopwords', quiet=True)
+
+# Translation
 import spacy
 from spacy.language import Language
 from spacy_langdetect import LanguageDetector
 from translate import Translator
 import ast
-from src.entity_finder import list_entities
 
-from pydantic import BaseModel, ValidationError
-from typing import List
-
-class PageSection(BaseModel):
-    name: str
-    sections: List[str]
-
-# Example output model: a list of `PageSection`
-class LLMOutput(BaseModel):
-    data: List[PageSection]
-
-
-def validate_info_output(info_output: str) -> LLMOutput:
-    """
-    Validates the LLM's info output against the Pydantic schema.
-    Args:
-        info_output (str): The raw output string from the LLM.
-    Returns:
-        LLMOutput: A validated Pydantic model instance.
-    Raises:
-        ValidationError: If the output does not conform to the schema.
-    """
-    try:
-        # Convert string to Python object using `ast.literal_eval`
-        raw_data = ast.literal_eval(info_output)
-
-        # Ensure the data matches the expected structure
-        validated_data = LLMOutput(data=[
-            PageSection(name=item[0], sections=item[1])
-            for item in raw_data
-        ])
-        return validated_data
-    except (SyntaxError, ValueError) as e:
-        raise ValueError(f"Invalid format in LLM output: {e}")
-    except ValidationError as e:
-        raise ValueError(f"Validation error: {e}")
-
-
-# Incorporating Validation in the Workflow
-# Step 1: Detect sections
-template_get_info = """Identify the most relevant sections from a set of pages to answer the given question.
-
-Inputs:
-1. **Question:** "{question}"
-2. **Pages and Sections:** {sections_and_page}
-
-Task:
-Determine the sections that are most relevant to answer the question and respond strictly in the following format:
-
-Output Format:
-[name_of_page1, [section1, section2, ...], name_of_page2, [section1, ...], ...]
-
-Do not include any explanations or additional text.
-
-"""
-
-# Paso 2 Clase central
-class CustomLLM(LLM):
-    model: str
-    system: str
-    api_url: str = "http://localhost:11434/api/generate"
-
-    def _call(self, prompt: str, stop: Optional[list] = None) -> str:
-        import requests
-        import json
-
-        data = {
-            "model": self.model,
-            "system": self.system,
-            "prompt": prompt,
-            "stream": False,
-        }
-        if stop:
-            data["stop"] = stop
-        headers = {"Content-Type": "application/json"}
-
-        try:
-            response = requests.post(self.api_url, headers=headers, data=json.dumps(data))
-            if response.status_code == HTTPStatus.OK:
-                result = response.json()
-                return result.get("response", "")
-            else:
-                raise ValueError(f"Error: {response.status_code}, {response.text}")
-        except Exception as e:
-            raise ValueError(f"An error occurred: {str(e)}")
-
-    @property
-    def _llm_type(self) -> str:
-        return "custom_llm"
-
-    @property
-    def _identifying_params(self):
-        return {"model": self.model, "system": self.system}
-
-
-
-llm = CustomLLM(
-    model="llama3.2:latest",
-    system="You are a helpful AI Assistant",
-)
-
-prompt_template_info = PromptTemplate(input_variables=["question", "sections_and_page"], template=template_get_info)
-info_chain = LLMChain(llm=llm
-                      , prompt=prompt_template_info, output_key="info_output", verbose=True)
+# Custom imports
+from config import *
+from entity_finder import list_entities
+from pydantic_schema import validate_info_output
 
 # Validation and Extraction
-def extract_text_with_validation(inputs):
-    # Run info chain
-    info_output = info_chain.run(inputs)
-    
-    # Validate the info output using Pydantic
-    try:
-        validated_data = validate_info_output(info_output)
-        print("Validation Passed.")
-    except ValueError as e:
-        print(f"Validation Error: {e}")
-        return {"context": []}  # Return empty context if validation fails
-    
+def extract_text_from_sections(section_dict):
     # Extract relevant section texts
+    extracted_info = string_to_dict(section_dict['info_output'])
     section_texts = []
-    for page_section in validated_data.data:
+    for page_title, sections in extracted_info.items():
         for page in pages:
-            if page.title == page_section.name:
+            if page.title == page_title:
                 for section in page.sections:
-                    if section.title in page_section.sections:
+                    if section.title in sections:
                         section_texts.append(section.text)
+    
+    print(f"Extracted section texts: {section_texts}")
     return {"context": section_texts}
-
-# Replacing the transformation step in the sequential chain
-transform_chain = TransformChain(
-    input_variables=["info_output"],
-    output_variables=["context"],
-    transform=extract_text_with_validation,
-    verbose=True,
-)
-
 
 # Paso 1.1 Inicializar Wikipedia API
 wiki_wiki = wikipediaapi.Wikipedia('MyProjectName (merlin@example.com)', 'en')
@@ -250,7 +129,7 @@ def retrieve_documents(statement, k=50):
     index.add(X.toarray())
 
     query_vec = vectorizer.transform([statement]).toarray()
-    D, I = index.search(query_vec, k)
+    _, I = index.search(query_vec, k)
 
     frases_relevantes = [frases_recuperadas[i] for i in I[0]]
     fuentes_relevantes = [fuentes[i] for i in I[0]]
@@ -302,10 +181,10 @@ def extract_text_from_sections(info):
 
 
 # Step 1: Question chain
-statement = "Is the Sun the closest planet to the Sun?"
-# statement = "¿Francisco de Goya pintó 'Las Meninas'?"
+# statement = "Is the Sun the closest planet to the Sun?"
+statement = "¿Francisco de Goya pintó 'Las Meninas'?"
 # Mirar si hay que traducir
-question,idioma = traducir_frase(statement)
+question, idioma = traducir_frase(statement)
 print(f"Se ha traducido la frase {statement}\n({idioma}-en)-> {question}")
 idioma = get_language_name(idioma)
 
@@ -317,39 +196,80 @@ sections_and_page = [
     for page in pages 
     if page is not None and page.exists()
 ]
-print(sections_and_page)
+print("Sections and page:\n", sections_and_page)
 print(f"Question: {question}\n")
 
 
 # Step 1: Detect sections
-"""Detecta cuál es la sección más importante para la pregunta"""
-template_get_info = """Identify the most relevant sections from a set of pages to answer the given question.
+llm_structured = CustomLLM(
+    model="llama3.2:latest",
+    system="You are a helpful AI Assistant",
+)
+format = {
+    "type": "object",
+    "properties": {
+        "pages": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "page_title": {
+                        "type": "string"
+                    },
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["page_title", "sections"]
+            }
+        }
+    },
+    "required": ["pages"]
+}
+response = llm_structured._call(prompt=f"""
+Identify the most relevant sections from a set of pages to answer the given question.
+
+The second input given is a list of tuples of pages and sections in the following format:
+[(name_of_page1, [section1, section2, ...]), (name_of_page2, [section1, ...]), ...]
 
 Inputs:
 1. **Question:** "{question}"
 2. **Pages and Sections:** {sections_and_page}
 
 Task:
-Determine the sections that are most relevant to answer the question and respond strictly in the following format:
+Determine the pages most relevant to answer the question. Specify the sections that are most relevant to answer the question. Try to keep the number of sections to a minimum.
+""", format=format)
 
-Output Format:
-[name_of_page1, [section1, section2, ...], name_of_page2, [section1, ...], ...]
+# Parse response JSON into a dictionary
+response_dict = json.loads(response)
+print("Relevant sections:\n", response_dict)
 
-Do not include any explanations or additional text.
+def extract_text_from_sections(pages_sections_dict):
+    """
+    Given the relevant sections and a list of pages/sections,
+    extract the corresponding text from those sections using the Wikipedia API.
+    """
+    relevant_texts = {}
+    
+    for page in pages_sections_dict:
+        print("Page:", page)
+        for section in page["sections"]:
+            print("Section:", section)
+            # Extract text from the section
+            text = wiki_wiki.page(page["page_title"]).section_by_title(section)
+            if text:
+                relevant_texts[section + " (" + page["page_title"] + ")"] = text
+            else:
+                print(f"Section '{section}' not found in page '{page['page_title']}'")
+    return relevant_texts
 
-"""
-prompt_template_info = PromptTemplate(input_variables=["question", "sections_and_page"], template=template_get_info)
-info_chain = LLMChain(llm=llm, prompt=prompt_template_info, output_key="info_output", verbose=True)
 
+context = extract_text_from_sections(response_dict["pages"])
 
-
-#Step 2: Extract text from sections
-transform_chain = TransformChain(
-    input_variables=["info_output"],
-    output_variables=["context"],
-    transform=extract_text_with_validation,
-    verbose=True,
-)
+print("Context:\n", context)
 
 # Step 3: Make question based on sections
 template_q = """Given the following question: {question}\n Answer it based on the following context: {context}\n\n"""
@@ -380,15 +300,15 @@ answer_chain = LLMChain(llm=llm, prompt=prompt_template_answer, output_key = "fi
 # Step 5: Combine all the chains into a sequential workflow
 # Combine chains with single input
 single_input_chain = SequentialChain(
-    chains=[info_chain, transform_chain, question_chain, assumptions_chain, fact_checker_chain, answer_chain],
-    input_variables=["question", "sections_and_page"],
+    chains=[question_chain, assumptions_chain, fact_checker_chain, answer_chain],
+    input_variables=["question", "context"],
     output_variables=["final_answer"],
     verbose=True
 )
 
 
 # Run the entire workflow
-inputs = {"question": question, "sections_and_page": sections_and_page}
+inputs = {"question": question, "context": context}
 intermediate_response = single_input_chain.run(inputs)
 
 # Final response
