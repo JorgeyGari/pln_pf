@@ -2,11 +2,21 @@ from langchain.llms.base import LLM
 from typing import Optional
 from http import HTTPStatus
 
+API_URL = "http://localhost:11434/api/generate"
+MODEL = "llama3.2:latest"
+VERBOSE = False
+ALLOW_WARNINGS = False
+
 
 class CustomLLM(LLM):
+    """
+    Custom LLM class for the FactChecker task.
+    Uses the Llama model deployed and accessible via the API URL.
+    """
+
     model: str
     system: str
-    api_url: str = "http://localhost:11434/api/generate"
+    api_url: str = API_URL
 
     def _call(
         self, prompt: str, stop: Optional[list] = None, format: Optional[dict] = None
@@ -47,9 +57,8 @@ class CustomLLM(LLM):
         return {"model": self.model, "system": self.system}
 
 
-# Example usage with structured output
 llm = CustomLLM(
-    model="llama3.2:latest",
+    model=MODEL,
     system="You are a helpful AI Assistant",
 )
 
@@ -71,5 +80,3 @@ section_format = {
         }
     },
 }
-
-verbose = False

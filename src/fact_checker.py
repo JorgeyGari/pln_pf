@@ -1,6 +1,7 @@
 import json
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain, SequentialChain
+import warnings
 
 # Stopwords
 import nltk
@@ -20,6 +21,10 @@ from config import *
 from entity_finder import list_entities
 from wikipedia_utils import *
 import templates
+
+warnings.filterwarnings(
+    "default" if ALLOW_WARNINGS else "ignore"
+)  # Suppress LangChain deprecation warnings
 
 
 @Language.factory("language_detector")
@@ -82,7 +87,7 @@ def setup_chain(template, input_variables, output_key) -> LLMChain:
     """
     prompt_template = PromptTemplate(input_variables=input_variables, template=template)
     chain = LLMChain(
-        llm=llm, prompt=prompt_template, output_key=output_key, verbose=verbose
+        llm=llm, prompt=prompt_template, output_key=output_key, verbose=VERBOSE
     )
     return chain
 
@@ -150,7 +155,7 @@ def main():
         chains=[question_chain, assumptions_chain, fact_checker_chain, answer_chain],
         input_variables=["question", "context"],
         output_variables=["final_answer"],
-        verbose=verbose,
+        verbose=VERBOSE,
     )
 
     # Run the entire workflow
