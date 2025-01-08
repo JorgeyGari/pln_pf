@@ -57,4 +57,8 @@ def extract_text_from_sections(pages_sections_dict):
             text = wiki_page.section_by_title(page["section"])
             if text:
                 relevant_texts[page["section"] + " (" + page["page_title"] + ")"] = text
+        else:
+            pages_sections_dict.remove(
+                page
+            )  # Remove the page if it doesn't exist, preventing made-up sections from being displayed in the documentation
     return relevant_texts
