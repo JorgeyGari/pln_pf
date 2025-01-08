@@ -17,6 +17,12 @@ questions = """Based on the following information:\n{context}. \n\nAnswer the fo
 
 answer = "In light of the above reasoning, how would you answer the question '{}'?\nPlease respond in {}."
 
+confidence = """This is the question asked: {}\n
+This is your answer: {}\n
+And this is the information you used: {}\n
+Based on this, how confident are you in your answer? You can base your response on the relevance of the information to the question, the clarity of the answer, and the overall quality of the response.
+Provide a confidence score between 0 and 100, where 0 is not confident at all and 100 is very confident. Additionally, provide a brief reasoning for your confidence score."""
+
 summarize = """For each of the following sections: \n {context}, create a summary of the introduction of the page and each section, 
 establishing at the beggining the name of the section and then a brief summary of the content.
 
