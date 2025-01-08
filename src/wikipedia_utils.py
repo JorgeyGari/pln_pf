@@ -76,7 +76,6 @@ def extract_text_from_sections(pages_sections_dict):
                 ]  # Extract introduction (text before the first section)
                 if intro_text.strip():
                     relevant_texts[intro_key] = intro_text
-                    print(f"Added introduction for {page['page_title']}: {intro_text}")
         else:
             pages_sections_dict.remove(page)  # Remove the page if it doesn't exist
 
