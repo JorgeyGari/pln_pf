@@ -17,6 +17,9 @@ El sistema de verificación de hechos permite la extracción de información de 
 
 - Python 3.11 o superior
 - Bibliotecas necesarias (ver [`requirements.txt`](requirements.txt))
+- Llama 3.1 o superior
+
+El sistema realiza llamadas a la API de Llama, por lo que es necesario contar con una instancia de Llama desplegada y accesible. La URL y el nombre del modelo de Llama se pueden configurar en el archivo [`config.py`](src/config.py).
 
 ## Instalación
 
