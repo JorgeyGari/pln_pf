@@ -1,21 +1,21 @@
-# Sistema de Verificación de Hechos
+# Sistema de verificación de hechos
 
-Este repositorio contiene el código y la documentación del sistema de verificación de hechos desarrollado en esta práctica. El sistema se ha implementado utilizando un enfoque de Recuperación-Augmentación-Generación (RAG).
+Repositorio contenedor del código y la documentación del sistema de verificación de hechos desarrollado para la práctica final del curso Procesamiento de Lenguaje Natural, impartido por la Universidad Carlos III de Madrid en el Máster Universitario de Inteligencia Artificial Aplicada durante el año 2024-2025. El sistema se ha implementado utilizando RAG (Retrieval-Augmentated Generation).
 
 ## Descripción
 
-El sistema de verificación de hechos permite la extracción de información de una base de datos, en este caso, Wikipedia, y con esa información se determina la veracidad de una pregunta o afirmación. El sistema es capaz de razonar la respuesta y minimizar las alucinaciones, aunque puede generar respuestas incorrectas si no dispone del contexto adecuado.
+El sistema de verificación de hechos permite la extracción de información de una base de datos, en este caso, Wikipedia, y con esa información se determina la veracidad de una pregunta o afirmación. El sistema es capaz de razonar la respuesta y minimizar las alucinaciones siempre que cuente con información relevante y adecuada.
 
 ## Características
 
 - **Extracción de información**: Utiliza Wikipedia como base de datos para obtener información relevante.
 - **Verificación de hechos**: Determina la veracidad de preguntas o afirmaciones basándose en la información extraída.
-- **Razonamiento**: Capacidad de razonar las respuestas proporcionadas.
-- **Minimización de alucinaciones**: Reduce la generación de respuestas incorrectas, aunque no las elimina por completo.
+- **Razonamiento**: Capacidad de razonar las respuestas proporcionadas mediante varias cadenas secuenciadas.
+- **Minimización de alucinaciones**: Reduce la generación de respuestas incorrectas utilizando razonamiento y recuperación de información.
 
 ## Requisitos
 
-- Python 3.x
+- Python 3.11 o superior
 - Bibliotecas necesarias (ver `requirements.txt`)
 
 ## Instalación
@@ -41,6 +41,9 @@ El sistema de verificación de hechos permite la extracción de información de 
     ```
 2. Introduce una pregunta o afirmación para verificar su veracidad.
 
-## Contacto
+## Desarrolladores
 
-Para cualquier consulta, puedes contactarme en jorgelazaro2002@hotmail.com.
+* Alejandro Climent
+* Jorge Lázaro
+* Aimar Nicuesa
+* Daniel Obreo
