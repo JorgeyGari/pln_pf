@@ -31,61 +31,54 @@ mult_nlp = spacy.load("xx_sent_ud_sm")
 mult_nlp.add_pipe("language_detector", last=True)
 
 
-def traducir_frase(frase, destino="en"):
-    mult_doc = mult_nlp(frase)
-    idioma = mult_doc._.language["language"]
-    if idioma != destino:
-        translator = Translator(from_lang=idioma, to_lang=destino)
+def translate_input(input_sentence, target_language="en") -> tuple:
+    """
+    Translates the input sentence to the target language if it is not already in the target language.
+    """
+    mult_doc = mult_nlp(input_sentence)
+    original_language = mult_doc._.language["language"]
+    if original_language != target_language:
+        translator = Translator(from_lang=original_language, to_lang=target_language)
         translated = translator.translate(mult_doc.text)
-        return translated, idioma
+        return translated, original_language
     else:
-        return frase, idioma
+        return input_sentence, original_language
 
 
-def string_to_dict(input_string):
+def string_to_dict(input_string) -> dict:
     """
-    Convierte una cadena con formato específico en un diccionario.
-
-    Args:
-        input_string (str): La cadena con el formato específico.
-
-    Returns:
-        dict: Un diccionario con las claves y listas correspondientes.
+    Converts a properly formatted string to a dictionary.
     """
-    # Convierte la cadena en una tupla utilizando ast.literal_eval para evaluar la estructura segura
     try:
         parsed_tuple = ast.literal_eval(input_string)
     except (ValueError, SyntaxError):
-        raise ValueError("El formato de la cadena no es válido.")
+        raise ValueError("Invalid input format.")
 
     result_dict = {}
 
-    # Recorre la tupla para organizarla en el diccionario
     for item in parsed_tuple:
         if isinstance(item, str):
-            # Crea claves con valores vacíos inicialmente
             result_dict[item] = []
         elif isinstance(item, list):
-            # Asocia la última clave con el contenido de la lista
             last_key = list(result_dict.keys())[-1]
             result_dict[last_key] = item
         else:
-            raise ValueError("El formato de los elementos de la tupla no es válido.")
+            raise ValueError("Tuple format is invalid.")
 
     return result_dict
 
 
-def setup_chain(template, input_variables, output_key):
+def setup_chain(template, input_variables, output_key) -> LLMChain:
     """
-    Configura una cadena de LLM con un template, variables de entrada y clave de salida.
+    Setup a chain with the given template and input variables.
 
     Args:
-        template (str): La plantilla para la cadena de LLM.
-        input_variables (list): Las variables de entrada para la plantilla.
-        output_key (str): La clave de salida para extraer el resultado.
+        template (str): The template to use.
+        input_variables (list): The input variables to use.
+        output_key (str): The output key to use.
 
     Returns:
-        LLMChain: Una cadena de LLM configurada con el template, variables de entrada y clave de salida.
+        LLMChain: The chain with the specified template and input variables.
     """
     prompt_template = PromptTemplate(input_variables=input_variables, template=template)
     chain = LLMChain(
@@ -95,25 +88,25 @@ def setup_chain(template, input_variables, output_key):
 
 
 def main():
-    # Step 1: Question chain
+    # Step 1: Process input
     print("Please enter a statement or question:")
     statement = input("> ")
-    question, idioma = traducir_frase(statement)
-    idioma = iso639.to_name(idioma)
+    question, lang = translate_input(statement)
+    lang = iso639.to_name(lang)
 
-    pages, _ = buscar_en_wikipedia(question)
+    pages, _ = wikipedia_search(question)
     sections_and_page = [("", "")]
     if pages is None:
         print("No information on the given statement.")
     else:
         sections_and_page = [
-            (page.title, extraer_titulos_sections(page))
+            (page.title, extract_section_titles(page))
             for page in pages
             if page.exists()
         ]
 
-    # Step 1: Detect sections
-    relevant_sections_json = llm_structured._call(
+    # Step 2: Detect relevant sections and retrieve text from Wikipedia
+    relevant_sections_json = llm._call(
         prompt=templates.get_relevant_sections.format(question, sections_and_page),
         format=section_format,
     )
@@ -124,35 +117,35 @@ def main():
         else {}
     )
 
-    # Step 2: Make question based on sections
+    # Step 3: Make question based on sections
     question_chain = setup_chain(
         template=templates.questions,
         input_variables=["question", "context"],
         output_key="statement",
     )
 
-    # Step 2: Assumptions chain with RAG
+    # Step 4: Evaluate assumptions comparing with RAG
     assumptions_chain = setup_chain(
         template=templates.assumptions,
         input_variables=["statement", "context"],
         output_key="assertions",
     )
 
-    # Step 3: Fact checker chain
+    # Step 5: Evaluate facts
     fact_checker_chain = setup_chain(
         template=templates.fact_checker,
         input_variables=["assertions"],
         output_key="facts",
     )
 
-    # Step 4: Answer chain based on verified facts
+    # Step 6: Answer the question
     answer_chain = setup_chain(
-        template="{facts}\n\n" + templates.answer.format(question, idioma),
+        template="{facts}\n\n" + templates.answer.format(question, lang),
         input_variables=["facts", "question"],
         output_key="final_answer",
     )
 
-    # Step 5: Combine all the chains into a sequential workflow
+    # Combine all chains
     single_input_chain = SequentialChain(
         chains=[question_chain, assumptions_chain, fact_checker_chain, answer_chain],
         input_variables=["question", "context"],

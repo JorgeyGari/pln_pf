@@ -3,35 +3,45 @@ import wikipediaapi
 from entity_finder import list_entities
 
 
-wiki_wiki = wikipediaapi.Wikipedia("FactChecker (email@example.com)", "en")
+wiki = wikipediaapi.Wikipedia("FactChecker (email@example.com)", "en")
 
 
-def extraer_titulos_sections(page):
-    array_titulos = []
+def extract_section_titles(page):
+    section_titles = []
     sections = page.sections
     for s in sections:
-        array_titulos.append(s.title)
-    return array_titulos
+        section_titles.append(s.title)
+    return section_titles
 
 
-def buscar_en_wikipedia(statement):
-    titulos = list_entities(statement)
+def wikipedia_search(statement) -> tuple:
+    """
+    Given a statement, search for relevant Wikipedia pages and return the pages and their sections.
 
-    if not titulos:
+    Args:
+        statement (str): The statement to search for.
+
+    Returns:
+        list: A list of Wikipedia pages.
+        list: A list of the sections of the Wikipedia pages.
+    """
+    entity_titles = list_entities(statement)
+
+    if not entity_titles:
         return None, []
 
-    paginas_contenido = []
+    retrieved_pages = []
 
-    for titulo in titulos:
-        page = wiki_wiki.page(titulo)
-        if page.exists():
-            pagina = page
-            paginas_contenido.append((titulo, pagina))
+    for entity_title in entity_titles:
+        wiki_page = wiki.page(entity_title)
+        if wiki_page.exists():
+            wiki_content = wiki_page
+            retrieved_pages.append((entity_title, wiki_content))
 
-    paginas_recuperadas = [pagina[1] for pagina in paginas_contenido]
-    fuentes = [pagina[0] for pagina in paginas_contenido]
+    retrieved_content = [page[1] for page in retrieved_pages]
+    page_titles_list = [page[0] for page in retrieved_pages]
 
-    return paginas_recuperadas, fuentes
+    return retrieved_content, page_titles_list
 
 
 def extract_text_from_sections(pages_sections_dict):
@@ -42,7 +52,7 @@ def extract_text_from_sections(pages_sections_dict):
     relevant_texts = {}
 
     for page in pages_sections_dict:
-        wiki_page = wiki_wiki.page(page["page_title"])
+        wiki_page = wiki.page(page["page_title"])
         if wiki_page.exists():
             text = wiki_page.section_by_title(page["section"])
             if text:
