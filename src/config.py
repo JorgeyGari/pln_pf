@@ -2,12 +2,15 @@ from langchain.llms.base import LLM
 from typing import Optional
 from http import HTTPStatus
 
+
 class CustomLLM(LLM):
     model: str
     system: str
     api_url: str = "http://localhost:11434/api/generate"
 
-    def _call(self, prompt: str, stop: Optional[list] = None, format: Optional[dict] = None) -> str:
+    def _call(
+        self, prompt: str, stop: Optional[list] = None, format: Optional[dict] = None
+    ) -> str:
         import requests
         import json
 
@@ -24,7 +27,9 @@ class CustomLLM(LLM):
         headers = {"Content-Type": "application/json"}
 
         try:
-            response = requests.post(self.api_url, headers=headers, data=json.dumps(data))
+            response = requests.post(
+                self.api_url, headers=headers, data=json.dumps(data)
+            )
             if response.status_code == HTTPStatus.OK:
                 result = response.json()
                 return result.get("response", "")
@@ -41,29 +46,33 @@ class CustomLLM(LLM):
     def _identifying_params(self):
         return {"model": self.model, "system": self.system}
 
+
 # Example usage with structured output
 llm = CustomLLM(
     model="llama3.2:latest",
     system="You are a helpful AI Assistant",
 )
-
-# Define the structure (as per the cURL example)
-format = {
+llm_structured = CustomLLM(
+    model="llama3.2:latest",
+    system="You are a helpful AI Assistant",
+)
+section_format = {
     "type": "object",
     "properties": {
-        "title": {
-            "type": "string"
-        },
-        "sections": {
+        "pages": {
             "type": "array",
             "items": {
-                "type": "string"
-            }
+                "type": "object",
+                "properties": {
+                    "page_title": {"type": "string"},
+                    "section": {
+                        "type": "string",
+                    },
+                },
+                "required": ["page_title", "section"],
+            },
         }
     },
-    "required": [
-        "title",
-        "sections", 
-    ]
 }
 
+verbose = False
