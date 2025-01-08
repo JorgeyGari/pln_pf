@@ -166,7 +166,7 @@ def main():
     ):
         confidence_json = llm._call(
             prompt=templates.confidence.format(
-                question, final_answer, relevant_sections_dict["pages"]
+                question, final_answer, relevant_sections_dict["pages"], lang
             ),
             format=confidence_format,
         )
